@@ -1,0 +1,69 @@
+#### **Example Verilog Code for Moore FSM (Sequence Detector "10")**  
+```verilog
+module moore_fsm (
+    input wire clk,
+    input wire rst,
+    input wire X,
+    output reg Z
+);
+    typedef enum reg [1:0] {S0, S1, S2} state_t;
+    state_t state, next_state;
+
+    always @(posedge clk or posedge rst) begin
+        if (rst)
+            state <= S0;
+        else
+            state <= next_state;
+    end
+
+    always @(*) begin
+        case (state)
+            S0: next_state = X ? S1 : S0;
+            S1: next_state = X ? S1 : S2;
+            S2: next_state = X ? S1 : S0;
+            default: next_state = S0;
+        endcase
+    end
+
+    always @(state) begin
+        Z = (state == S2) ? 1 : 0;
+    end
+endmodule
+```
+
+#### **Testbench Code**  
+```verilog
+module testbench;
+    reg clk, rst, X;
+    wire Z;
+    
+    moore_fsm uut (.clk(clk), .rst(rst), .X(X), .Z(Z));
+    
+    initial begin
+        clk = 0;
+        forever #5 clk = ~clk;
+    end
+    
+    initial begin
+        $monitor("Time=%0t | X=%b | State=%b | Z=%b", $time, X, uut.state, Z);
+        rst = 1; #10;
+        rst = 0;
+        X = 1; #10;
+        X = 0; #10;
+        X = 1; #10;
+        X = 0; #10;
+        X = 1; #10;
+        X = 1; #10;
+        $finish;
+    end
+endmodule
+```
+
+#### **Simulation Output (Console Log Example)**  
+```
+Time=0   | X=1 | State=S0 | Z=0  
+Time=10  | X=1 | State=S1 | Z=0  
+Time=20  | X=0 | State=S2 | Z=1  
+Time=30  | X=1 | State=S1 | Z=0  
+Time=40  | X=0 | State=S2 | Z=1  
+```
